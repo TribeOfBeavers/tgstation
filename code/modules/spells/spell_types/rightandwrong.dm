@@ -96,7 +96,7 @@ GLOBAL_VAR_INIT(summon_magic_triggered, FALSE)
 		SSticker.mode.traitors += H.mind
 
 		H.mind.add_antag_datum(/datum/antagonist/survivalist/guns)
-		H.log_message("<font color='red'>Was made into a survivalist, and trusts no one!</font>", INDIVIDUAL_ATTACK_LOG)
+		H.log_message("was made into a survivalist, and trusts no one!", LOG_ATTACK, color="red")
 
 	var/gun_type = pick(GLOB.summoned_guns)
 	var/obj/item/gun/G = new gun_type(get_turf(H))
@@ -116,7 +116,7 @@ GLOBAL_VAR_INIT(summon_magic_triggered, FALSE)
 
 	if(prob(GLOB.summon_magic_triggered) && !(H.mind.has_antag_datum(/datum/antagonist)))
 		H.mind.add_antag_datum(/datum/antagonist/survivalist/magic)
-		H.log_message("<font color='red'>Was made into a survivalist, and trusts no one!</font>", INDIVIDUAL_ATTACK_LOG)
+		H.log_message("was made into a survivalist, and trusts no one!</font>", LOG_ATTACK, color="red")
 
 	var/magic_type = pick(GLOB.summoned_magic)
 	var/lucky = FALSE
@@ -137,7 +137,7 @@ GLOBAL_VAR_INIT(summon_magic_triggered, FALSE)
 /proc/rightandwrong(summon_type, mob/user, survivor_probability)
 	if(user) //in this case either someone holding a spellbook or a badmin
 		to_chat(user, "<span class='warning'>You summoned [summon_type]!</span>")
-		message_admins("[key_name_admin(user, 1)] summoned [summon_type]!")
+		message_admins("[key_name_admin(user, TRUE)] summoned [summon_type]!")
 		log_game("[key_name(user)] summoned [summon_type]!")
 
 	if(summon_type == SUMMON_MAGIC)

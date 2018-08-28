@@ -3,12 +3,12 @@
 	desc = "It charges power cells."
 	icon = 'icons/obj/power.dmi'
 	icon_state = "ccharger"
-	anchored = TRUE
 	use_power = IDLE_POWER_USE
 	idle_power_usage = 5
 	active_power_usage = 60
 	power_channel = EQUIP
 	circuit = /obj/item/circuitboard/machine/cell_charger
+	pass_flags = PASSTABLE
 	var/obj/item/stock_parts/cell/charging = null
 	var/chargelevel = -1
 	var/charge_rate = 500

@@ -3,7 +3,6 @@
 	icon = 'icons/obj/computer.dmi'
 	icon_state = "computer"
 	density = TRUE
-	anchored = TRUE
 	use_power = IDLE_POWER_USE
 	idle_power_usage = 300
 	active_power_usage = 300
@@ -69,6 +68,8 @@
 	return
 
 /obj/machinery/computer/screwdriver_act(mob/living/user, obj/item/I)
+	if(..())
+		return TRUE
 	if(circuit && !(flags_1&NODECONSTRUCT_1))
 		to_chat(user, "<span class='notice'>You start to disconnect the monitor...</span>")
 		if(I.use_tool(src, user, 20, volume=50))
@@ -112,7 +113,7 @@
 			var/obj/structure/frame/computer/A = new /obj/structure/frame/computer(src.loc)
 			A.dir = dir
 			A.circuit = circuit
-			A.anchored = TRUE
+			A.setAnchored(TRUE)
 			if(stat & BROKEN)
 				if(user)
 					to_chat(user, "<span class='notice'>The broken glass falls out.</span>")

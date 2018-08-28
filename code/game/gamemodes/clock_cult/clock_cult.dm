@@ -59,8 +59,12 @@ Credit where due:
 			return FALSE
 	else
 		return FALSE
-	if(iscultist(M) || isconstruct(M) || M.isloyal() || ispAI(M))
+	if(iscultist(M) || isconstruct(M) || ispAI(M))
 		return FALSE
+	if(isliving(M))
+		var/mob/living/L = M
+		if(L.has_trait(TRAIT_MINDSHIELD))
+			return FALSE
 	if(ishuman(M) || isbrain(M) || isguardian(M) || issilicon(M) || isclockmob(M) || istype(M, /mob/living/simple_animal/drone/cogscarab) || istype(M, /mob/camera/eminence))
 		return TRUE
 	return FALSE
@@ -143,6 +147,14 @@ Credit where due:
 	var/datum/team/clockcult/main_clockcult
 
 /datum/game_mode/clockwork_cult/pre_setup()
+	var/list/errorList = list()
+	var/list/reebes = SSmapping.LoadGroup(errorList, "Reebe", "map_files/generic", "City_of_Cogs.dmm", default_traits = ZTRAITS_REEBE, silent = TRUE)
+	if(errorList.len)	// reebe failed to load
+		message_admins("Reebe failed to load!")
+		log_game("Reebe failed to load!")
+		return FALSE
+	for(var/datum/parsed_map/PM in reebes)
+		PM.initTemplateBounds()
 	if(CONFIG_GET(flag/protect_roles_from_antagonist))
 		restricted_jobs += protected_jobs
 	if(CONFIG_GET(flag/protect_assistant_from_antagonist))
@@ -168,7 +180,7 @@ Credit where due:
 /datum/game_mode/clockwork_cult/post_setup()
 	for(var/S in servants_to_serve)
 		var/datum/mind/servant = S
-		log_game("[servant.key] was made an initial servant of Ratvar")
+		log_game("[key_name(servant)] was made an initial servant of Ratvar")
 		var/mob/living/L = servant.current
 		var/turf/T = pick(GLOB.servant_spawns)
 		L.forceMove(T)

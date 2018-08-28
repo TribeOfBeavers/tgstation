@@ -187,7 +187,7 @@
 	inspiration_available = FALSE
 
 /obj/item/banner/command/check_inspiration(mob/living/carbon/human/H)
-	return H.isloyal() //Command is stalwart but rewards their allies.
+	return H.has_trait(TRAIT_MINDSHIELD) //Command is stalwart but rewards their allies.
 
 /datum/crafting_recipe/command_banner
 	name = "Command Banner"
@@ -288,6 +288,7 @@
 
 
 /obj/item/godstaff/afterattack(atom/target, mob/user, proximity_flag, click_parameters)
+	. = ..()
 	if(staffcooldown + staffwait > world.time)
 		return
 	user.visible_message("[user] chants deeply and waves [user.p_their()] staff!")

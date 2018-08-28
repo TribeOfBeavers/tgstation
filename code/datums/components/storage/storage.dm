@@ -67,38 +67,39 @@
 	closer = new(null, src)
 	orient2hud()
 
-	RegisterSignal(COMSIG_CONTAINS_STORAGE, .proc/on_check)
-	RegisterSignal(COMSIG_IS_STORAGE_LOCKED, .proc/check_locked)
-	RegisterSignal(COMSIG_TRY_STORAGE_SHOW, .proc/signal_show_attempt)
-	RegisterSignal(COMSIG_TRY_STORAGE_INSERT, .proc/signal_insertion_attempt)
-	RegisterSignal(COMSIG_TRY_STORAGE_CAN_INSERT, .proc/signal_can_insert)
-	RegisterSignal(COMSIG_TRY_STORAGE_TAKE_TYPE, .proc/signal_take_type)
-	RegisterSignal(COMSIG_TRY_STORAGE_FILL_TYPE, .proc/signal_fill_type)
-	RegisterSignal(COMSIG_TRY_STORAGE_SET_LOCKSTATE, .proc/set_locked)
-	RegisterSignal(COMSIG_TRY_STORAGE_TAKE, .proc/signal_take_obj)
-	RegisterSignal(COMSIG_TRY_STORAGE_QUICK_EMPTY, .proc/signal_quick_empty)
-	RegisterSignal(COMSIG_TRY_STORAGE_HIDE_FROM, .proc/signal_hide_attempt)
-	RegisterSignal(COMSIG_TRY_STORAGE_HIDE_ALL, .proc/close_all)
-	RegisterSignal(COMSIG_TRY_STORAGE_RETURN_INVENTORY, .proc/signal_return_inv)
+	RegisterSignal(parent, COMSIG_CONTAINS_STORAGE, .proc/on_check)
+	RegisterSignal(parent, COMSIG_IS_STORAGE_LOCKED, .proc/check_locked)
+	RegisterSignal(parent, COMSIG_TRY_STORAGE_SHOW, .proc/signal_show_attempt)
+	RegisterSignal(parent, COMSIG_TRY_STORAGE_INSERT, .proc/signal_insertion_attempt)
+	RegisterSignal(parent, COMSIG_TRY_STORAGE_CAN_INSERT, .proc/signal_can_insert)
+	RegisterSignal(parent, COMSIG_TRY_STORAGE_TAKE_TYPE, .proc/signal_take_type)
+	RegisterSignal(parent, COMSIG_TRY_STORAGE_FILL_TYPE, .proc/signal_fill_type)
+	RegisterSignal(parent, COMSIG_TRY_STORAGE_SET_LOCKSTATE, .proc/set_locked)
+	RegisterSignal(parent, COMSIG_TRY_STORAGE_TAKE, .proc/signal_take_obj)
+	RegisterSignal(parent, COMSIG_TRY_STORAGE_QUICK_EMPTY, .proc/signal_quick_empty)
+	RegisterSignal(parent, COMSIG_TRY_STORAGE_HIDE_FROM, .proc/signal_hide_attempt)
+	RegisterSignal(parent, COMSIG_TRY_STORAGE_HIDE_ALL, .proc/close_all)
+	RegisterSignal(parent, COMSIG_TRY_STORAGE_RETURN_INVENTORY, .proc/signal_return_inv)
 
-	RegisterSignal(COMSIG_PARENT_ATTACKBY, .proc/attackby)
+	RegisterSignal(parent, COMSIG_PARENT_ATTACKBY, .proc/attackby)
 
-	RegisterSignal(COMSIG_ATOM_ATTACK_HAND, .proc/on_attack_hand)
-	RegisterSignal(COMSIG_ATOM_ATTACK_PAW, .proc/on_attack_hand)
-	RegisterSignal(COMSIG_ATOM_EMP_ACT, .proc/emp_act)
-	RegisterSignal(COMSIG_ATOM_ATTACK_GHOST, .proc/show_to_ghost)
-	RegisterSignal(COMSIG_ATOM_ENTERED, .proc/refresh_mob_views)
-	RegisterSignal(COMSIG_ATOM_EXITED, .proc/_remove_and_refresh)
+	RegisterSignal(parent, COMSIG_ATOM_ATTACK_HAND, .proc/on_attack_hand)
+	RegisterSignal(parent, COMSIG_ATOM_ATTACK_PAW, .proc/on_attack_hand)
+	RegisterSignal(parent, COMSIG_ATOM_EMP_ACT, .proc/emp_act)
+	RegisterSignal(parent, COMSIG_ATOM_ATTACK_GHOST, .proc/show_to_ghost)
+	RegisterSignal(parent, COMSIG_ATOM_ENTERED, .proc/refresh_mob_views)
+	RegisterSignal(parent, COMSIG_ATOM_EXITED, .proc/_remove_and_refresh)
+	RegisterSignal(parent, COMSIG_ATOM_CANREACH, .proc/canreach_react)
 
-	RegisterSignal(COMSIG_ITEM_PRE_ATTACK, .proc/preattack_intercept)
-	RegisterSignal(COMSIG_ITEM_ATTACK_SELF, .proc/attack_self)
-	RegisterSignal(COMSIG_ITEM_PICKUP, .proc/signal_on_pickup)
+	RegisterSignal(parent, COMSIG_ITEM_PRE_ATTACK, .proc/preattack_intercept)
+	RegisterSignal(parent, COMSIG_ITEM_ATTACK_SELF, .proc/attack_self)
+	RegisterSignal(parent, COMSIG_ITEM_PICKUP, .proc/signal_on_pickup)
 
-	RegisterSignal(COMSIG_MOVABLE_THROW, .proc/close_all)
+	RegisterSignal(parent, COMSIG_MOVABLE_POST_THROW, .proc/close_all)
 
-	RegisterSignal(COMSIG_CLICK_ALT, .proc/on_alt_click)
-	RegisterSignal(COMSIG_MOUSEDROP_ONTO, .proc/mousedrop_onto)
-	RegisterSignal(COMSIG_MOUSEDROPPED_ONTO, .proc/mousedrop_recieve)
+	RegisterSignal(parent, COMSIG_CLICK_ALT, .proc/on_alt_click)
+	RegisterSignal(parent, COMSIG_MOUSEDROP_ONTO, .proc/mousedrop_onto)
+	RegisterSignal(parent, COMSIG_MOUSEDROPPED_ONTO, .proc/mousedrop_receive)
 
 	update_actions()
 
@@ -118,6 +119,7 @@
 		return
 	var/obj/item/I = parent
 	modeswitch_action = new(I)
+	RegisterSignal(modeswitch_action, COMSIG_ACTION_TRIGGER, .proc/action_trigger)
 	if(I.obj_flags & IN_INVENTORY)
 		var/mob/M = I.loc
 		if(!istype(M))
@@ -125,11 +127,13 @@
 		modeswitch_action.Grant(M)
 
 /datum/component/storage/proc/change_master(datum/component/storage/concrete/new_master)
-	if(!istype(new_master))
+	if(new_master == src || (!isnull(new_master) && !istype(new_master)))
 		return FALSE
-	master.on_slave_unlink(src)
+	if(master)
+		master.on_slave_unlink(src)
 	master = new_master
-	master.on_slave_link(src)
+	if(master)
+		master.on_slave_link(src)
 	return TRUE
 
 /datum/component/storage/proc/master()
@@ -141,6 +145,16 @@
 	var/datum/component/storage/concrete/master = master()
 	return master? master.real_location() : null
 
+/datum/component/storage/proc/canreach_react(list/next)
+	var/datum/component/storage/concrete/master = master()
+	if(!master)
+		return
+	. = COMPONENT_BLOCK_REACH
+	next += master.parent
+	for(var/i in master.slaves)
+		var/datum/component/storage/slave = i
+		next += slave.parent
+
 /datum/component/storage/proc/attack_self(mob/M)
 	if(locked)
 		to_chat(M, "<span class='warning'>[parent] seems to be locked!</span>")
@@ -149,7 +163,7 @@
 		quick_empty(M)
 
 /datum/component/storage/proc/preattack_intercept(obj/O, mob/M, params)
-	if(!isitem(O) || !click_gather || O.SendSignal(COMSIG_CONTAINS_STORAGE))
+	if(!isitem(O) || !click_gather || SEND_SIGNAL(O, COMSIG_CONTAINS_STORAGE))
 		return FALSE
 	. = COMPONENT_NO_ATTACK
 	if(locked)
@@ -466,7 +480,7 @@
 	if(recursive)
 		for(var/i in ret.Copy())
 			var/atom/A = i
-			A.SendSignal(COMSIG_TRY_STORAGE_RETURN_INVENTORY, ret, TRUE)
+			SEND_SIGNAL(A, COMSIG_TRY_STORAGE_RETURN_INVENTORY, ret, TRUE)
 	return ret
 
 /datum/component/storage/proc/contents()			//ONLY USE IF YOU NEED TO COPY CONTENTS OF REAL LOCATION, COPYING IS NOT AS FAST AS DIRECT ACCESS!
@@ -517,19 +531,19 @@
 	if(force || M.CanReach(parent, view_only = TRUE))
 		show_to(M)
 
-/datum/component/storage/proc/mousedrop_recieve(atom/movable/O, mob/M)
+/datum/component/storage/proc/mousedrop_receive(atom/movable/O, mob/M)
 	if(isitem(O))
 		var/obj/item/I = O
 		if(iscarbon(M) || isdrone(M))
 			var/mob/living/L = M
 			if(!L.incapacitated() && I == L.get_active_held_item())
-				if(!I.SendSignal(COMSIG_CONTAINS_STORAGE) && can_be_inserted(I, FALSE))	//If it has storage it should be trying to dump, not insert.
+				if(!SEND_SIGNAL(I, COMSIG_CONTAINS_STORAGE) && can_be_inserted(I, FALSE))	//If it has storage it should be trying to dump, not insert.
 					handle_item_insertion(I, FALSE, L)
 
 //This proc return 1 if the item can be picked up and 0 if it can't.
 //Set the stop_messages to stop it from printing messages
 /datum/component/storage/proc/can_be_inserted(obj/item/I, stop_messages = FALSE, mob/M)
-	if(!istype(I) || (I.flags_1 & ABSTRACT_1))
+	if(!istype(I) || (I.item_flags & ABSTRACT))
 		return FALSE //Not an item
 	if(I == parent)
 		return FALSE	//no paradoxes for you
@@ -538,7 +552,7 @@
 	if(real_location == I.loc)
 		return FALSE //Means the item is already in the storage item
 	if(locked)
-		if(M)
+		if(M && !stop_messages)
 			host.add_fingerprint(M)
 			to_chat(M, "<span class='warning'>[host] seems to be locked!</span>")
 		return FALSE
@@ -573,7 +587,7 @@
 			if(!stop_messages)
 				to_chat(M, "<span class='warning'>[IP] cannot hold [I] as it's a storage item of the same size!</span>")
 			return FALSE //To prevent the stacking of same sized storage items.
-	if(I.flags_1 & NODROP_1) //SHOULD be handled in unEquip, but better safe than sorry.
+	if(I.item_flags & NODROP) //SHOULD be handled in unEquip, but better safe than sorry.
 		to_chat(M, "<span class='warning'>\the [I] is stuck to your hand, you can't put it in \the [host]!</span>")
 		return FALSE
 	var/datum/component/storage/concrete/master = master()
@@ -639,14 +653,11 @@
 /datum/component/storage/proc/signal_take_type(type, atom/destination, amount = INFINITY, check_adjacent = FALSE, force = FALSE, mob/user, list/inserted)
 	if(!force)
 		if(check_adjacent)
-			if(user)
-				if(!user.CanReach(destination) || !user.CanReach(parent))
-					return FALSE
-			else if(!destination.CanReachStorage(parent))
+			if(!user || !user.CanReach(destination) || !user.CanReach(parent))
 				return FALSE
 	var/list/taking = typecache_filter_list(contents(), typecacheof(type))
-	if(length(taking) > amount)
-		taking.Cut(amount)
+	if(taking.len > amount)
+		taking.len = amount
 	if(inserted)			//duplicated code for performance, don't bother checking retval/checking for list every item.
 		for(var/i in taking)
 			if(remove_from_storage(i, destination))
@@ -697,7 +708,10 @@
 
 	if(A.loc == user)
 		. = COMPONENT_NO_ATTACK_HAND
-		show_to(user)
+		if(locked)
+			to_chat(user, "<span class='warning'>[parent] seems to be locked!</span>")
+		else
+			show_to(user)
 
 /datum/component/storage/proc/signal_on_pickup(mob/user)
 	var/atom/A = parent
@@ -718,7 +732,7 @@
 	return hide_from(target)
 
 /datum/component/storage/proc/on_alt_click(mob/user)
-	if(!isliving(user) || user.incapacitated() || !quickdraw || !user.CanReach(parent))
+	if(!isliving(user) || user.incapacitated() || !quickdraw || locked || !user.CanReach(parent))
 		return
 	var/obj/item/I = locate() in real_location()
 	if(!I)
@@ -728,6 +742,10 @@
 		to_chat(user, "<span class='notice'>You fumble for [I] and it falls on the floor.</span>")
 		return
 	user.visible_message("<span class='warning'>[user] draws [I] from [parent]!</span>", "<span class='notice'>You draw [I] from [parent].</span>")
+
+/datum/component/storage/proc/action_trigger(datum/action/source)
+	gather_mode_switch(source.owner)
+	return COMPONENT_ACTION_BLOCK_TRIGGER
 
 /datum/component/storage/proc/gather_mode_switch(mob/user)
 	collection_mode = (collection_mode+1)%3

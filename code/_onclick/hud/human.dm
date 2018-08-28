@@ -80,12 +80,7 @@
 	icon_state = "power_display"
 	screen_loc = ui_lingchemdisplay
 
-/mob/living/carbon/human/create_mob_hud()
-	if(client && !hud_used)
-		hud_used = new /datum/hud/human(src, ui_style2icon(client.prefs.UI_style))
-
-
-/datum/hud/human/New(mob/living/carbon/human/owner, ui_style = 'icons/mob/screen_midnight.dmi')
+/datum/hud/human/New(mob/living/carbon/human/owner)
 	..()
 	owner.overlay_fullscreen("see_through_darkness", /obj/screen/fullscreen/see_through_darkness)
 
@@ -135,7 +130,7 @@
 	inv_box.screen_loc = ui_oclothing
 	toggleable_inventory += inv_box
 
-	build_hand_slots(ui_style)
+	build_hand_slots()
 
 	using = new /obj/screen/swap_hand()
 	using.icon = ui_style
@@ -207,7 +202,7 @@
 
 	using = new /obj/screen/resist()
 	using.icon = ui_style
-	using.screen_loc = ui_pull_resist
+	using.screen_loc = ui_above_intent
 	hotkeybuttons += using
 
 	using = new /obj/screen/human/toggle()
@@ -274,6 +269,11 @@
 	throw_icon.screen_loc = ui_drop_throw
 	hotkeybuttons += throw_icon
 
+	rest_icon = new /obj/screen/rest()
+	rest_icon.icon = ui_style
+	rest_icon.screen_loc = ui_above_movement
+	static_inventory += rest_icon
+
 	internals = new /obj/screen/internals()
 	infodisplay += internals
 
@@ -283,14 +283,10 @@
 	healthdoll = new /obj/screen/healthdoll()
 	infodisplay += healthdoll
 
-	if(!CONFIG_GET(flag/disable_human_mood))
-		mood = new /obj/screen/mood()
-		infodisplay += mood
-
 	pull_icon = new /obj/screen/pull()
 	pull_icon.icon = ui_style
 	pull_icon.update_icon(mymob)
-	pull_icon.screen_loc = ui_pull_resist
+	pull_icon.screen_loc = ui_above_intent
 	static_inventory += pull_icon
 
 	lingchemdisplay = new /obj/screen/ling/chems()

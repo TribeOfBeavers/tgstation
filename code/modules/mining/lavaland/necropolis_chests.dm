@@ -189,7 +189,7 @@
 	activated()
 
 /obj/item/rod_of_asclepius/proc/activated()
-	flags_1 = NODROP_1 | DROPDEL_1
+	item_flags = NODROP | DROPDEL
 	desc = "A short wooden rod with a mystical snake inseparably gripping itself and the rod to your forearm. It flows with a healing energy that disperses amongst yourself and those around you. "
 	icon_state = "asclepius_active"
 	activated = TRUE
@@ -266,26 +266,29 @@
 /obj/item/wisp_lantern/attack_self(mob/user)
 	if(!wisp)
 		to_chat(user, "<span class='warning'>The wisp has gone missing!</span>")
+		icon_state = "lantern"
 		return
+
 	if(wisp.loc == src)
 		to_chat(user, "<span class='notice'>You release the wisp. It begins to bob around your head.</span>")
-		user.sight |= SEE_MOBS
 		icon_state = "lantern"
 		wisp.orbit(user, 20)
+		user.update_sight()
 		SSblackbox.record_feedback("tally", "wisp_lantern", 1, "Freed")
 
 	else
 		to_chat(user, "<span class='notice'>You return the wisp to the lantern.</span>")
 
+		var/mob/target
 		if(wisp.orbiting)
-			var/atom/A = wisp.orbiting.orbiting
-			if(isliving(A))
-				var/mob/living/M = A
-				M.sight &= ~SEE_MOBS
-				to_chat(M, "<span class='notice'>Your vision returns to normal.</span>")
-
+			target = wisp.orbiting.orbiting
 		wisp.stop_orbit()
 		wisp.forceMove(src)
+
+		if (istype(target))
+			target.update_sight()
+			to_chat(target, "<span class='notice'>Your vision returns to normal.</span>")
+
 		icon_state = "lantern-blue"
 		SSblackbox.record_feedback("tally", "wisp_lantern", 1, "Returned")
 
@@ -308,6 +311,8 @@
 	icon_state = "orb"
 	light_range = 7
 	layer = ABOVE_ALL_MOB_LAYER
+	var/sight_flags = SEE_MOBS
+	var/lighting_alpha = LIGHTING_PLANE_ALPHA_MOSTLY_VISIBLE
 
 //Red/Blue Cubes
 /obj/item/warp_cube
@@ -367,6 +372,7 @@
 
 /obj/effect/warp_cube
 	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
+	anchored = TRUE
 
 /obj/effect/warp_cube/ex_act(severity, target)
 	return
@@ -382,7 +388,7 @@
 	righthand_file = 'icons/mob/inhands/weapons/melee_righthand.dmi'
 	fire_sound = 'sound/weapons/batonextend.ogg'
 	max_charges = 1
-	flags_1 = NOBLUDGEON_1
+	item_flags = NEEDS_PERMIT | NOBLUDGEON
 	force = 18
 
 /obj/item/ammo_casing/magic/hook
@@ -589,7 +595,7 @@
 	to_chat(user, "<span class='notice'>You unfold the ladder. It extends much farther than you were expecting.</span>")
 	var/last_ladder = null
 	for(var/i in 1 to world.maxz)
-		if(is_centcom_level(i) || is_transit_level(i) || is_reebe(i) || is_away_level(i))
+		if(is_centcom_level(i) || is_reserved_level(i) || is_reebe(i) || is_away_level(i))
 			continue
 		var/turf/T2 = locate(ladder_x, ladder_y, i)
 		last_ladder = new /obj/structure/ladder/unbreakable/jacob(T2, null, last_ladder)
@@ -760,7 +766,7 @@
 
 	notify_ghosts("[user] is raising [user.p_their()] [src], calling for your help!",
 		enter_link="<a href=?src=[REF(src)];orbit=1>(Click to help)</a>",
-		source = user, action=NOTIFY_ORBIT)
+		source = user, action=NOTIFY_ORBIT, ignore_key = POLL_IGNORE_SPECTRAL_BLADE)
 
 	summon_cooldown = world.time + 600
 
@@ -893,7 +899,7 @@
 	var/static/list/banned_turfs = typecacheof(list(/turf/open/space/transit, /turf/closed))
 
 /obj/item/lava_staff/afterattack(atom/target, mob/user, proximity_flag, click_parameters)
-	..()
+	. = ..()
 	if(timer > world.time)
 		return
 
@@ -915,8 +921,8 @@
 				var/old_name = T.name
 				if(T.TerraformTurf(turf_type))
 					user.visible_message("<span class='danger'>[user] turns \the [old_name] into [transform_string]!</span>")
-					message_admins("[key_name_admin(user)] fired the lava staff at [get_area(target)]. [ADMIN_COORDJMP(T)]")
-					log_game("[key_name(user)] fired the lava staff at [get_area(target)] [COORD(T)].")
+					message_admins("[ADMIN_LOOKUPFLW(user)] fired the lava staff at [ADMIN_VERBOSEJMP(T)]")
+					log_game("[key_name(user)] fired the lava staff at [AREACOORD(T)].")
 					timer = world.time + create_cooldown
 					playsound(T,'sound/magic/fireball.ogg', 200, 1)
 			else
@@ -968,8 +974,8 @@
 		INVOKE_ASYNC(B, /obj/effect/mine/pickup/bloodbath/.proc/mineEffect, H)
 	to_chat(user, "<span class='notice'>You shatter the bottle!</span>")
 	playsound(user.loc, 'sound/effects/glassbr1.ogg', 100, 1)
-	message_admins("<span class='adminnotice'>[key_name_admin(user)][ADMIN_FLW(user)] has activated a bottle of mayhem!</span>")
-	add_logs(user, null, "activated a bottle of mayhem", src)
+	message_admins("<span class='adminnotice'>[ADMIN_LOOKUPFLW(user)] has activated a bottle of mayhem!</span>")
+	log_combat(user, null, "activated a bottle of mayhem", src)
 	qdel(src)
 
 /obj/item/blood_contract
@@ -1008,12 +1014,12 @@
 
 	var/mob/living/L = choice
 
-	message_admins("<span class='adminnotice'>[key_name_admin(L)][ADMIN_FLW(L)] has been marked for death by [key_name_admin(user)]!</span>")
+	message_admins("<span class='adminnotice'>[ADMIN_LOOKUPFLW(L)] has been marked for death by [ADMIN_LOOKUPFLW(user)]!</span>")
 
 	var/datum/objective/survive/survive = new
 	survive.owner = L.mind
 	L.mind.objectives += survive
-	add_logs(user, L, "took out a blood contract on", src)
+	log_combat(user, L, "took out a blood contract on", src)
 	to_chat(L, "<span class='userdanger'>You've been marked for death! Don't let the demons get you! KILL THEM ALL!</span>")
 	L.add_atom_colour("#FF0000", ADMIN_COLOUR_PRIORITY)
 	var/obj/effect/mine/pickup/bloodbath/B = new(L)
@@ -1091,7 +1097,7 @@
 	qdel(user)
 
 /obj/item/hierophant_club/afterattack(atom/target, mob/user, proximity_flag, click_parameters)
-	..()
+	. = ..()
 	var/turf/T = get_turf(target)
 	if(!T || timer > world.time)
 		return
@@ -1099,7 +1105,7 @@
 	timer = world.time + CLICK_CD_MELEE //by default, melee attacks only cause melee blasts, and have an accordingly short cooldown
 	if(proximity_flag)
 		INVOKE_ASYNC(src, .proc/aoe_burst, T, user)
-		add_logs(user, target, "fired 3x3 blast at", src)
+		log_combat(user, target, "fired 3x3 blast at", src)
 	else
 		if(ismineralturf(target) && get_dist(user, target) < 6) //target is minerals, we can hit it(even if we can't see it)
 			INVOKE_ASYNC(src, .proc/cardinal_blasts, T, user)
@@ -1111,10 +1117,10 @@
 				var/obj/effect/temp_visual/hierophant/chaser/C = new(get_turf(user), user, target, chaser_speed, friendly_fire_check)
 				C.damage = 30
 				C.monster_damage_boost = FALSE
-				add_logs(user, target, "fired a chaser at", src)
+				log_combat(user, target, "fired a chaser at", src)
 			else
 				INVOKE_ASYNC(src, .proc/cardinal_blasts, T, user) //otherwise, just do cardinal blast
-				add_logs(user, target, "fired cardinal blast at", src)
+				log_combat(user, target, "fired cardinal blast at", src)
 		else
 			to_chat(user, "<span class='warning'>That target is out of range!</span>" )
 			timer = world.time
@@ -1226,7 +1232,7 @@
 			INVOKE_ASYNC(src, .proc/prepare_icon_update)
 			beacon.icon_state = "hierophant_tele_off"
 			return
-		add_logs(user, beacon, "teleported self from ([source.x],[source.y],[source.z]) to")
+		user.log_message("teleported self from [AREACOORD(source)] to [beacon]")
 		new /obj/effect/temp_visual/hierophant/telegraph/teleport(T, user)
 		new /obj/effect/temp_visual/hierophant/telegraph/teleport(source, user)
 		for(var/t in RANGE_TURFS(1, T))
@@ -1273,7 +1279,7 @@
 		return
 	M.visible_message("<span class='hierophant_warning'>[M] fades in!</span>")
 	if(user != M)
-		add_logs(user, M, "teleported", null, "from ([source.x],[source.y],[source.z])")
+		log_combat(user, M, "teleported", null, "from [AREACOORD(source)]")
 
 /obj/item/hierophant_club/proc/cardinal_blasts(turf/T, mob/living/user) //fire cardinal cross blasts with a delay
 	if(!T)
@@ -1309,3 +1315,18 @@
 	for(var/t in RANGE_TURFS(1, T))
 		var/obj/effect/temp_visual/hierophant/blast/B = new(t, user, friendly_fire_check)
 		B.damage = 15 //keeps monster damage boost due to lower damage
+
+
+//Just some minor stuff
+/obj/structure/closet/crate/necropolis/puzzle
+	name = "puzzling chest"
+
+/obj/structure/closet/crate/necropolis/puzzle/PopulateContents()
+	var/loot = rand(1,3)
+	switch(loot)
+		if(1)
+			new /obj/item/soulstone/anybody(src)
+		if(2)
+			new /obj/item/wisp_lantern(src)
+		if(3)
+			new /obj/item/prisoncube(src)

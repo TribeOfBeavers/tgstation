@@ -8,7 +8,6 @@
 	icon = 'icons/obj/machines/sleeper.dmi'
 	icon_state = "sleeper"
 	state_open = TRUE
-	anchored = TRUE
 	occupant_typecache = list(/mob/living/carbon/human) // turned into typecache in Initialize
 	circuit = /obj/item/circuitboard/machine/vr_sleeper
 	var/you_die_in_the_game_you_die_for_real = FALSE
@@ -96,7 +95,7 @@
 					SStgui.close_user_uis(occupant, src)
 					vr_human.real_mind = human_occupant.mind
 					vr_human.ckey = human_occupant.ckey
-					to_chat(vr_human, "<span class='notice'>Transfer successful! you are now playing as [vr_human] in VR!</span>")
+					to_chat(vr_human, "<span class='notice'>Transfer successful! You are now playing as [vr_human] in VR!</span>")
 				else
 					if(allow_creating_vr_humans)
 						to_chat(occupant, "<span class='warning'>Virtual avatar not found, attempting to create one...</span>")
@@ -105,7 +104,7 @@
 						if(T)
 							SStgui.close_user_uis(occupant, src)
 							build_virtual_human(occupant, T, V.vr_outfit)
-							to_chat(vr_human, "<span class='notice'>Transfer successful! you are now playing as [vr_human] in VR!</span>")
+							to_chat(vr_human, "<span class='notice'>Transfer successful! You are now playing as [vr_human] in VR!</span>")
 						else
 							to_chat(occupant, "<span class='warning'>Virtual world misconfigured, aborting transfer</span>")
 					else
@@ -145,7 +144,7 @@
 	data["isoccupant"] = (user == occupant)
 	return data
 
-/obj/machinery/vr_sleeper/proc/get_vr_spawnpoint() //proc so it can be overriden for team games or something
+/obj/machinery/vr_sleeper/proc/get_vr_spawnpoint() //proc so it can be overridden for team games or something
 	return safepick(GLOB.vr_spawnpoints[vr_category])
 
 /obj/machinery/vr_sleeper/proc/build_spawnpoints() // used to rebuild the list for admins if need be
@@ -179,7 +178,7 @@
 		vr_human.vr_sleeper = null // Prevents race condition where a new human could get created out of order and set to null.
 		QDEL_NULL(vr_human)
 
-/obj/machinery/vr_sleeper/proc/emagNotify() 
+/obj/machinery/vr_sleeper/proc/emagNotify()
 	if(vr_human)
 		vr_human.Dizzy(10)
 
@@ -199,10 +198,10 @@
 	vr_category = "team_1"
 
 /obj/effect/landmark/vr_spawn/team_2
-	vr_category = "team_2"	
+	vr_category = "team_2"
 
 /obj/effect/landmark/vr_spawn/admin
-	vr_category = "event"	
+	vr_category = "event"
 
 /obj/effect/landmark/vr_spawn/syndicate // Multiple missions will use syndicate gear
 	vr_outfit = /datum/outfit/vr/syndicate

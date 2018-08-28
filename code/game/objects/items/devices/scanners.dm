@@ -42,7 +42,7 @@ SLIME SCANNER
 /obj/item/t_scanner/proc/scan()
 	t_ray_scan(loc)
 
-/proc/t_ray_scan(mob/viewer, flick_time = 8, distance = 2)
+/proc/t_ray_scan(mob/viewer, flick_time = 8, distance = 3)
 	if(!ismob(viewer) || !viewer.client)
 		return
 	var/list/t_ray_images = list()
@@ -68,7 +68,8 @@ SLIME SCANNER
 	lefthand_file = 'icons/mob/inhands/equipment/medical_lefthand.dmi'
 	righthand_file = 'icons/mob/inhands/equipment/medical_righthand.dmi'
 	desc = "A hand-held body scanner able to distinguish vital signs of the subject."
-	flags_1 = CONDUCT_1 | NOBLUDGEON_1
+	flags_1 = CONDUCT_1
+	item_flags = NOBLUDGEON
 	slot_flags = ITEM_SLOT_BELT
 	throwforce = 3
 	w_class = WEIGHT_CLASS_TINY
@@ -256,7 +257,32 @@ SLIME SCANNER
 	// Species and body temperature
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
-		to_chat(user, "<span class='info'>Species: [H.dna.species.name]</span>")
+		var/datum/species/S = H.dna.species
+		var/mutant = FALSE
+		if (H.dna.check_mutation(HULK))
+			mutant = TRUE
+		else if (S.mutantlungs != initial(S.mutantlungs))
+			mutant = TRUE
+		else if (S.mutant_brain != initial(S.mutant_brain))
+			mutant = TRUE
+		else if (S.mutant_heart != initial(S.mutant_heart))
+			mutant = TRUE
+		else if (S.mutanteyes != initial(S.mutanteyes))
+			mutant = TRUE
+		else if (S.mutantears != initial(S.mutantears))
+			mutant = TRUE
+		else if (S.mutanthands != initial(S.mutanthands))
+			mutant = TRUE
+		else if (S.mutanttongue != initial(S.mutanttongue))
+			mutant = TRUE
+		else if (S.mutanttail != initial(S.mutanttail))
+			mutant = TRUE
+		else if (S.mutantliver != initial(S.mutantliver))
+			mutant = TRUE
+		else if (S.mutantstomach != initial(S.mutantstomach))
+			mutant = TRUE
+
+		to_chat(user, "<span class='info'>Species: [S.name][mutant ? "-derived mutant" : ""]</span>")
 	to_chat(user, "<span class='info'>Body temperature: [round(M.bodytemperature-T0C,0.1)] &deg;C ([round(M.bodytemperature*1.8-459.67,0.1)] &deg;F)</span>")
 
 	// Time of death
@@ -302,6 +328,7 @@ SLIME SCANNER
 		if(cyberimp_detect)
 			to_chat(user, "<span class='notice'>Detected cybernetic modifications:</span>")
 			to_chat(user, "<span class='notice'>[cyberimp_detect]</span>")
+	SEND_SIGNAL(M, COMSIG_NANITE_SCAN, user, FALSE)
 
 /proc/chemscan(mob/living/user, mob/living/M)
 	if(istype(M))
@@ -348,7 +375,8 @@ SLIME SCANNER
 	lefthand_file = 'icons/mob/inhands/equipment/tools_lefthand.dmi'
 	righthand_file = 'icons/mob/inhands/equipment/tools_righthand.dmi'
 	w_class = WEIGHT_CLASS_SMALL
-	flags_1 = CONDUCT_1 | NOBLUDGEON_1
+	flags_1 = CONDUCT_1
+	item_flags = NOBLUDGEON
 	slot_flags = ITEM_SLOT_BELT
 	throwforce = 0
 	throw_speed = 3
@@ -428,7 +456,7 @@ SLIME SCANNER
 	if(user.canUseTopic(src))
 
 		if(cooldown)
-			to_chat(user, "<span class='warning'>[src]'s barometer function is prepraring itself.</span>")
+			to_chat(user, "<span class='warning'>[src]'s barometer function is preparing itself.</span>")
 			return
 
 		var/turf/T = get_turf(user)
@@ -500,6 +528,7 @@ SLIME SCANNER
 		var/pressure = air_contents.return_pressure()
 		var/volume = air_contents.return_volume() //could just do mixture.volume... but safety, I guess?
 		var/temperature = air_contents.temperature
+		var/cached_scan_results = air_contents.analyzer_results
 
 		if(total_moles > 0)
 			to_chat(user, "<span class='notice'>Moles: [round(total_moles, 0.01)] mol</span>")
@@ -517,6 +546,12 @@ SLIME SCANNER
 				to_chat(user, "<span class='notice'>This node is empty!</span>")
 			else
 				to_chat(user, "<span class='notice'>[target] is empty!</span>")
+
+		if(cached_scan_results && cached_scan_results["fusion"]) //notify the user if a fusion reaction was detected
+			var/fusion_power = round(cached_scan_results["fusion"], 0.01)
+			var/tier = fusionpower2text(fusion_power)
+			to_chat(user, "<span class='boldnotice'>Large amounts of free neutrons detected in the air indicate that a fusion reaction took place.</span>")
+			to_chat(user, "<span class='notice'>Power of the last fusion reaction: [fusion_power]\n This power indicates it was a [tier]-tier fusion reaction.</span>")
 	return
 
 //slime scanner
@@ -576,3 +611,30 @@ SLIME SCANNER
 		to_chat(user, "<span class='notice'>Core mutation in progress: [T.effectmod]</span>")
 		to_chat(user, "<span_class = 'notice'>Progress in core mutation: [T.applied] / [SLIME_EXTRACT_CROSSING_REQUIRED]</span>")
 	to_chat(user, "========================")
+
+
+/obj/item/nanite_scanner
+	name = "nanite scanner"
+	icon = 'icons/obj/device.dmi'
+	icon_state = "nanite_scanner"
+	item_state = "nanite_remote"
+	lefthand_file = 'icons/mob/inhands/equipment/medical_lefthand.dmi'
+	righthand_file = 'icons/mob/inhands/equipment/medical_righthand.dmi'
+	desc = "A hand-held body scanner able to detect nanites and their programming."
+	flags_1 = CONDUCT_1
+	item_flags = NOBLUDGEON
+	slot_flags = ITEM_SLOT_BELT
+	throwforce = 3
+	w_class = WEIGHT_CLASS_TINY
+	throw_speed = 3
+	throw_range = 7
+	materials = list(MAT_METAL=200)
+
+/obj/item/nanite_scanner/attack(mob/living/M, mob/living/carbon/human/user)
+	user.visible_message("<span class='notice'>[user] has analyzed [M]'s nanites.</span>")
+
+	add_fingerprint(user)
+
+	var/response = SEND_SIGNAL(M, COMSIG_NANITE_SCAN, user, TRUE)
+	if(!response)
+		to_chat(user, "<span class='info'>No nanites detected in the subject.</span>")

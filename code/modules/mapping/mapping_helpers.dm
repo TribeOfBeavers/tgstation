@@ -9,7 +9,7 @@
 
 	var/list/baseturf_to_replace
 	var/baseturf
-	
+
 	layer = POINT_LAYER
 
 /obj/effect/baseturf_helper/Initialize()
@@ -30,7 +30,7 @@
 	var/area/our_area = get_area(src)
 	for(var/i in get_area_turfs(our_area, z))
 		replace_baseturf(i)
-	
+
 	qdel(src)
 
 /obj/effect/baseturf_helper/proc/replace_baseturf(turf/thing)
@@ -108,11 +108,11 @@
 	var/obj/machinery/door/airlock/airlock = locate(/obj/machinery/door/airlock) in loc
 	if(airlock)
 		if(airlock.cyclelinkeddir)
-			log_world("### MAP WARNING, [src] at [COORD(src)] tried to set [airlock] cyclelinkeddir, but it's already set!")
+			log_world("### MAP WARNING, [src] at [AREACOORD(src)] tried to set [airlock] cyclelinkeddir, but it's already set!")
 		else
 			airlock.cyclelinkeddir = dir
 	else
-		log_world("### MAP WARNING, [src] failed to find an airlock at [COORD(src)]")		
+		log_world("### MAP WARNING, [src] failed to find an airlock at [AREACOORD(src)]")
 
 
 /obj/effect/mapping_helpers/airlock/locked
@@ -127,11 +127,26 @@
 	var/obj/machinery/door/airlock/airlock = locate(/obj/machinery/door/airlock) in loc
 	if(airlock)
 		if(airlock.locked)
-			log_world("### MAP WARNING, [src] at [COORD(src)] tried to bolt [airlock] but it's already locked!")
+			log_world("### MAP WARNING, [src] at [AREACOORD(src)] tried to bolt [airlock] but it's already locked!")
 		else
 			airlock.locked = TRUE
 	else
-		log_world("### MAP WARNING, [src] failed to find an airlock at [COORD(src)]")
+		log_world("### MAP WARNING, [src] failed to find an airlock at [AREACOORD(src)]")
+
+/obj/effect/mapping_helpers/airlock/unres
+	name = "airlock unresctricted side helper"
+	icon_state = "airlock_unres_helper"
+
+/obj/effect/mapping_helpers/airlock/unres/Initialize(mapload)
+	. = ..()
+	if(!mapload)
+		log_world("### MAP WARNING, [src] spawned outside of mapload!")
+		return
+	var/obj/machinery/door/airlock/airlock = locate(/obj/machinery/door/airlock) in loc
+	if(airlock)
+		airlock.unres_sides ^= dir
+	else
+		log_world("### MAP WARNING, [src] failed to find an airlock at [AREACOORD(src)]")
 
 
 //needs to do its thing before spawn_rivers() is called
@@ -145,17 +160,15 @@ INITIALIZE_IMMEDIATE(/obj/effect/mapping_helpers/no_lava)
 	var/turf/T = get_turf(src)
 	T.flags_1 |= NO_LAVA_GEN_1
 
-//Contains the list of planetary z-levels defined by the planet_z helper.
-GLOBAL_LIST_EMPTY(z_is_planet)
-
-/obj/effect/mapping_helpers/planet_z //adds the map it is on to the z_is_planet list
+/// Adds the map it is on to the z_is_planet list
+/obj/effect/mapping_helpers/planet_z
 	name = "planet z helper"
 	layer = POINT_LAYER
 
 /obj/effect/mapping_helpers/planet_z/Initialize()
 	. = ..()
-	var/turf/T = get_turf(src)
-	GLOB.z_is_planet["[T.z]"] = TRUE
+	var/datum/space_level/S = SSmapping.get_level(z)
+	S.traits[ZTRAIT_PLANET] = TRUE
 
 
 //This helper applies components to things on the map directly.
